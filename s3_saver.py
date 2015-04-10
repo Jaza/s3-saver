@@ -9,7 +9,7 @@ from boto.exception import S3ResponseError
 from boto.s3.key import Key
 
 
-class S3Save(object):
+class S3Saver(object):
     """
     Saves files to Amazon S3 (or default local storage).
     """
@@ -37,7 +37,7 @@ class S3Save(object):
 
     def _get_path(self, filename):
         if not self.base_path:
-            raise ValueError('S3Save requires base_path to be set.')
+            raise ValueError('S3Saver requires base_path to be set.')
 
         if callable(self.base_path):
             return os.path.join(self.base_path(), filename)
@@ -45,7 +45,7 @@ class S3Save(object):
 
     def _get_s3_path(self, filename):
         if not self.static_root_parent:
-            raise ValueError('S3Save requires static_root_parent to be set.')
+            raise ValueError('S3Saver requires static_root_parent to be set.')
 
         return re.sub('^\/', '', self._get_path(filename).replace(self.static_root_parent, ''))
 
