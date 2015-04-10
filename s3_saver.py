@@ -51,10 +51,14 @@ class S3Saver(object):
         return re.sub('^\/', '', self._get_path(filename).replace(self.static_root_parent, ''))
 
     def _delete_local(self, filename):
+        """Deletes the specified file from the local filesystem."""
+
         if os.path.exists(filename):
             os.remove(filename)
 
     def _delete_s3(self, filename, bucket_name):
+        """Deletes the specified file from the given S3 bucket."""
+
         conn = S3Connection(self.access_key_id, self.access_key_secret)
         bucket = conn.get_bucket(bucket_name)
 
@@ -71,6 +75,8 @@ class S3Saver(object):
             pass
 
     def delete(self, filename, storage_type=None, bucket_name=None):
+        """Deletes the specified file, either locally or from S3, depending on the file's storage type."""
+
         if not (storage_type and bucket_name):
             self._delete_local(filename)
         else:
@@ -80,6 +86,8 @@ class S3Saver(object):
             self._delete_s3(filename, bucket_name)
 
     def _save_local(self, temp_file, filename, obj):
+        """Saves the specified file to the local file system."""
+
         path = self._get_path(filename)
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path), self.permission | 0o111)
@@ -102,6 +110,8 @@ class S3Saver(object):
         return filename
 
     def _save_s3(self, temp_file, filename, obj):
+        """Saves the specified file to the configured S3 bucket."""
+
         conn = S3Connection(self.access_key_id, self.access_key_secret)
         bucket = conn.get_bucket(self.bucket_name)
 
@@ -116,6 +126,8 @@ class S3Saver(object):
         return filename
 
     def save(self, temp_file, filename, obj):
+        """Saves the specified file to either S3 or the local filesystem, depending on the currently enabled storage type."""
+
         if not (self.storage_type and self.bucket_name):
             ret = self._save_local(temp_file, filename, obj)
         else:
@@ -141,9 +153,13 @@ class S3Saver(object):
         return ret
 
     def _find_by_path_local(self, path):
+        """Finds files by globbing on the local filesystem."""
+
         return glob('%s*' % path)
 
     def _find_by_path_s3(self, path, bucket_name):
+        """Finds files by licking an S3 bucket's contents by prefix."""
+
         conn = S3Connection(self.access_key_id, self.access_key_secret)
         bucket = conn.get_bucket(bucket_name)
 
@@ -152,6 +168,8 @@ class S3Saver(object):
         return bucket.list(prefix=s3_path)
 
     def find_by_path(self, path, storage_type=None, bucket_name=None):
+        """Finds files at the specified path / prefix, either on S3 or on the local filesystem."""
+
         if not (storage_type and bucket_name):
             return self._find_by_path_local(path)
         else:
