@@ -1,4 +1,4 @@
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 from glob import glob
 import os
@@ -18,8 +18,8 @@ class S3Saver(object):
                  access_key_id=None, access_key_secret=None,
                  acl='public-read', field_name=None,
                  storage_type_field=None, bucket_name_field=None,
-                 base_path=None, permission=0o666,
-                 static_root_parent=None):
+                 filesize_field=None, base_path=None,
+                 permission=0o666, static_root_parent=None):
         if storage_type and (storage_type != 's3'):
             raise ValueError('Storage type "%s" is invalid, the only supported storage type (apart from default local storage) is s3.' % storage_type)
 
@@ -31,6 +31,7 @@ class S3Saver(object):
         self.field_name = field_name
         self.storage_type_field = storage_type_field
         self.bucket_name_field = bucket_name_field
+        self.filesize_field = filesize_field
         self.base_path = base_path
         self.permission = permission
         self.static_root_parent = static_root_parent
@@ -78,7 +79,7 @@ class S3Saver(object):
 
             self._delete_s3(filename, bucket_name)
 
-    def _save_local(self, temp_file, filename):
+    def _save_local(self, temp_file, filename, obj):
         path = self._get_path(filename)
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path), self.permission | 0o111)
@@ -95,9 +96,12 @@ class S3Saver(object):
 
         fd.close()
 
+        if self.filesize_field:
+            setattr(obj, self.filesize_field, os.path.getsize(path))
+
         return filename
 
-    def _save_s3(self, temp_file, filename):
+    def _save_s3(self, temp_file, filename, obj):
         conn = S3Connection(self.access_key_id, self.access_key_secret)
         bucket = conn.get_bucket(self.bucket_name)
 
@@ -106,16 +110,19 @@ class S3Saver(object):
         k.set_contents_from_string(temp_file.getvalue())
         k.set_acl(self.acl)
 
+        if self.filesize_field:
+            setattr(obj, self.filesize_field, k.size)
+
         return filename
 
     def save(self, temp_file, filename, obj):
         if not (self.storage_type and self.bucket_name):
-            ret = self._save_local(temp_file, filename)
+            ret = self._save_local(temp_file, filename, obj)
         else:
             if self.storage_type != 's3':
                 raise ValueError('Storage type "%s" is invalid, the only supported storage type (apart from default local storage) is s3.' % self.storage_type)
 
-            ret = self._save_s3(temp_file, filename)
+            ret = self._save_s3(temp_file, filename, obj)
 
         if self.field_name:
             setattr(obj, self.field_name, ret)
