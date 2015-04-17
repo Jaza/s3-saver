@@ -8,6 +8,12 @@ The idea behind this, is that you can pass exactly the same data (in particular,
 This is great for apps where all files are stored on the local filesystem in one environment (e.g. development), and on S3 in another environment (e.g. production). The only thing you have to work out at run-time, is whether to specify 's3' or None - the rest of your file-handling code stays the same.
 
 
+Example
+-------
+
+For a complete, working Flask app that demonstrates s3-saver in action, have a look at `flask-s3-save-example <https://github.com/Jaza/flask-s3-save-example>`_.
+
+
 Usage
 -----
 
